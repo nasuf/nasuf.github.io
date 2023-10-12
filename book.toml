@@ -4,3 +4,13 @@ language = "en"
 multilingual = false
 src = "src"
 title = "NASUF Dev Notes"
+
+[preprocessor]
+
+[preprocessor.catppuccin]
+assets_version = "2.0.1" # DO NOT EDIT: Managed by `mdbook-catppuccin install`
+
+[output]
+
+[output.html]
+additional-css = ["./theme/catppuccin.css", "./theme/catppuccin-admonish.css"]
