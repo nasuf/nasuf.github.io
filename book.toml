@@ -1,0 +1,6 @@
+[book]
+authors = ["nasuf"]
+language = "en"
+multilingual = false
+src = "src"
+title = "NASUF Dev Notes"

@@ -1,0 +1,463 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>类加载子系统 - NASUF Dev Notes</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../highlight.css">
+        <link rel="stylesheet" href="../tomorrow-night.css">
+        <link rel="stylesheet" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('light')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded "><a href="../JVM/index.html"><strong aria-hidden="true">1.</strong> Jvm</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../JVM/01_概览.html"><strong aria-hidden="true">1.1.</strong> 概览</a></li><li class="chapter-item expanded "><a href="../JVM/02_类加载子系统.html" class="active"><strong aria-hidden="true">1.2.</strong> 类加载子系统</a></li><li class="chapter-item expanded "><a href="../JVM/03_运行时数据区（线程和程序计数器）.html"><strong aria-hidden="true">1.3.</strong> 运行时数据区（线程和程序计数器）</a></li><li class="chapter-item expanded "><a href="../JVM/04_本地方法接口.html"><strong aria-hidden="true">1.4.</strong> 本地方法接口</a></li><li class="chapter-item expanded "><a href="../JVM/05_运行时数据区（虚拟机栈和本地方法栈）.html"><strong aria-hidden="true">1.5.</strong> 运行时数据区（虚拟机栈和本地方法栈）</a></li></ol></li><li class="chapter-item expanded "><a href="../Rust/index.html"><strong aria-hidden="true">2.</strong> Rust</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../Rust/01_生命周期（基础理解）.html"><strong aria-hidden="true">2.1.</strong> 生命周期-基础理解</a></li></ol></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">NASUF Dev Notes</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h2 id="1-类加载子系统作用"><a class="header" href="#1-类加载子系统作用">1. 类加载子系统作用</a></h2>
+<p><img src="/Images/jvm/2/1.png" alt="image.png" /></p>
+<ul>
+<li>类加载子系统负责从文件系统或者网络中加载Class文件，Class文件在文件开头有特定的文件标识；</li>
+<li>ClassLoader只负责Class文件的加载，至于它是否可以运行，则由Execution Engine决定；</li>
+<li>加载的类信息存放于一块成为方法区的内存空间。除了类的信息外，<strong>方法区</strong>中还会存放<strong>运行时常量池</strong>信息，可能还包括<strong>字符串字面量</strong>和<strong>数字常量</strong>（这部分常量信息是Class文件中常量池部分的内存映射）
+注：运行时常量池，如下列代码</li>
+</ul>
+<pre><code class="language-java">public class StackStructure {
+
+    public static void main(String[] args) {
+        int a = 2;
+        int b = 3;
+        int c = a + b;
+    }
+}
+</code></pre>
+<p>反编译后的部分输出</p>
+<pre><code class="language-java">Constant pool:
+   #1 = Methodref          #3.#21         // java/lang/Object.&quot;&lt;init&gt;&quot;:()V
+   #2 = Class              #22            // com/nasuf/jvm/StackStructure
+   #3 = Class              #23            // java/lang/Object
+   #4 = Utf8               &lt;init&gt;
+   #5 = Utf8               ()V
+   #6 = Utf8               Code
+   #7 = Utf8               LineNumberTable
+   #8 = Utf8               LocalVariableTable
+   #9 = Utf8               this
+  #10 = Utf8               Lcom/nasuf/jvm/StackStructure;
+  #11 = Utf8               main
+  #12 = Utf8               ([Ljava/lang/String;)V
+  #13 = Utf8               args
+  #14 = Utf8               [Ljava/lang/String;
+  #15 = Utf8               a
+  #16 = Utf8               I
+  #17 = Utf8               b
+  #18 = Utf8               c
+  #19 = Utf8               SourceFile
+  #20 = Utf8               StackStructure.java
+  #21 = NameAndType        #4:#5          // &quot;&lt;init&gt;&quot;:()V
+  #22 = Utf8               com/nasuf/jvm/StackStructure
+  #23 = Utf8               java/lang/Object
+</code></pre>
+<p>上述常量池信息在运行时加载到内存中，就成为<strong>运行时常量池</strong>。</p>
+<h2 id="2-类加载器classloader角色"><a class="header" href="#2-类加载器classloader角色">2. 类加载器ClassLoader角色</a></h2>
+<p><img src="/images/jvm/2/2.png" alt="image.png" /></p>
+<ul>
+<li>class file存在于本地硬盘上，可以理解为设计师画在纸上的模板，而最终这个模板在执行的时候是以<strong>二进制流</strong>加载到JVM当中来根据这个文件实例化出n个一模一样的实例；</li>
+<li>class file加载到JVM中，被称为DNA元数据模板，放在方法区；</li>
+<li>在.class文件 -&gt; JVM -&gt; 最终称为元数据模板，此过程就要一个运输工具（类加载器ClassLoader)，扮演一个快递员的角色</li>
+</ul>
+<h2 id="3-类的加载过程"><a class="header" href="#3-类的加载过程">3. 类的加载过程</a></h2>
+<p><img src="/images/jvm/2/3.png" alt="image.png" /></p>
+<h3 id="31-加载"><a class="header" href="#31-加载">3.1 加载</a></h3>
+<ol>
+<li>通过一个类的<strong>全限定名</strong>获取定义此类的<strong>二进制字节流</strong>；</li>
+<li>将这个字节流所代表的的<strong>静态存储结构转化为方法区的运行时数据结构</strong>；</li>
+<li><strong>在内存中生成一个代表这个类的java.lang.Class对象</strong>，作为方法区这个类的各种数据的访问入口。
+<strong>加载class文件的方式</strong></li>
+</ol>
+<ul>
+<li>从本地系统中直接加载</li>
+<li>通过网络获取，典型场景：Web Applet</li>
+<li>从zip压缩包中读取，成为日后jar、war格式的基础</li>
+<li>运行时计算生成，使用最多的是：动态代理技术</li>
+<li>由其他文件生成，典型场景：JSP应用</li>
+<li>从专有数据库中提取class文件，比较少见</li>
+<li>从加密文件中获取，典型的防class文件被反编译的保护措施</li>
+</ul>
+<h3 id="32-链接"><a class="header" href="#32-链接">3.2 链接</a></h3>
+<h4 id="321-验证verify"><a class="header" href="#321-验证verify">3.2.1 验证（Verify）</a></h4>
+<ul>
+<li>
+<p>目的在于确保class文件的字节流中更包含的信息符合当前虚拟机要求，保证被加载类的正确性，不会危害虚拟机自身安全；</p>
+</li>
+<li>
+<p>主要包括四种验证：文件格式验证，元数据验证，字节码验证，符号引用验证；比如查看下列字节码文件，字节码应以<strong>CA FE BA BE</strong>开头：</p>
+<p><img src="/images/jvm/2/4.png" alt="image.png" /></p>
+</li>
+</ul>
+<h4 id="322-准备prepare"><a class="header" href="#322-准备prepare">3.2.2 准备（Prepare）</a></h4>
+<ul>
+<li>为类变量分配内存并且设置该类变量的默认初始值，即零值；</li>
+<li>这里不包含用final修饰的static，因为final在编译的时候就会分配了，准备阶段会显式初始化；</li>
+<li>这里不会为实例变量分配初始化，类变量会分配在方法区中，而实例变量会随着对象一期分配到Java堆中</li>
+</ul>
+<h4 id="323-解析resolve"><a class="header" href="#323-解析resolve">3.2.3 解析（Resolve）</a></h4>
+<ul>
+<li>将常量池内的符号引用转换为直接引用的过程；</li>
+<li>事实上，解析操作往往伴随着JVM在执行完初始化之后再执行；</li>
+<li>符号引用就是一组符号来描述所引用的目标。符号引用的字面量形式明确定义在《java虚拟机规范》的class文件格式中，直接饮用就是直接指向目标的指针、相对偏移量或一个间接定位到目标的句柄；</li>
+<li>解析动作主要针对类或接口、字段、类方法、接口方法、方法类型等。对应常量池中的CONSTANT_Class_info、CONSTANT_Fieldref_info、CONSTANT_Methodref_info等</li>
+</ul>
+<h3 id="33-初始化"><a class="header" href="#33-初始化">3.3 初始化</a></h3>
+<ul>
+<li>初始化阶段就是执行类的构造器方法&lt;clinit&gt;()的过程；</li>
+<li>此方法不需定义，是javac编译器自动手机类中的所有类变量的赋值动作和静态代码块中的语句合并而来；</li>
+<li>构造器方法中指令按语句在源文件中出现的顺序执行；</li>
+<li>&lt;clinint&gt;()不同于类的构造器（关联：构造器是虚拟机视角下的&lt;init&gt;());</li>
+</ul>
+<p>查看如下代码字节码信息：</p>
+<p><img src="/images/jvm/2/5.png" alt="image.png" /></p>
+<p>修改代码再次查看，及&lt;clinit&gt;()方法会将代码中显示初始化的值合并：</p>
+<p><img src="/images/jvm/2/6.png" alt="image.png" /></p>
+<p>修改代码查看赋值过程：</p>
+<p><img src="/images/jvm/2/7.png" alt="image.png" /></p>
+<p>而如果类中不存在静态变量或静态代码块，则字节码中不会存在&lt;clinit&gt;()方法：
+（注：&lt;init&gt;方法是类的构造器方法）</p>
+<p><img src="/images/jvm/2/8.png" alt="image.png" /></p>
+<ul>
+<li>若该类具有父类，JVM会保证子类的&lt;clinit&gt;()执行前，父类的&lt;clinit&gt;()已经执行完毕；</li>
+<li>虚拟机必须保证一个类的&lt;clinit&gt;()方法在多线程下被同步加锁；例如如下代码，两个线程启动后，只会有一个线程会初始化DeatThread类</li>
+</ul>
+<p><img src="/images/jvm/2/9.png" alt="image.png" /></p>
+<h2 id="4-类加载器的分类"><a class="header" href="#4-类加载器的分类">4. 类加载器的分类</a></h2>
+<h3 id="41-概述"><a class="header" href="#41-概述">4.1 概述</a></h3>
+<ul>
+<li>JVM支持两种类型的类加载器，分别是<strong>引导类加载器（Bootstrap ClassLoader，非java语言编写）和自定义类加载器（User-Defined ClassLoader， java语言编写）</strong></li>
+<li>从概念上来讲，自定义类加载器一般指的是程序中由开发人员自定义的一类加载器，但是Java虚拟机规范中定义，<strong>将所有派生于抽象类ClassLoader的类加载器都划分为自定义类加载器</strong>，那么平常所说的扩展类加载器和应用类加载器都属于自定义类加载器(均间接继承了ClassLoader class）</li>
+</ul>
+<p><img src="/images/jvm/2/10.png" alt="image.png" /></p>
+<p><img src="/images/jvm/2/11.png" alt="image.png" /></p>
+<p>ExtClassLoader.class</p>
+<p><img src="/images/jvm/2/12.png" alt="image.png" /></p>
+<p>AppClassLoader.class</p>
+<p><img src="/images/jvm/2/13.png" alt="image.png" /></p>
+<p>打印出各层类加载器：</p>
+<p><img src="/images/jvm/2/14.png" alt="image.png" /></p>
+<h3 id="42-启动类加载器引导类加载器bootstrap-classloader"><a class="header" href="#42-启动类加载器引导类加载器bootstrap-classloader">4.2 启动类加载器（引导类加载器，Bootstrap ClassLoader)</a></h3>
+<ul>
+<li>这个类加载使用C/C++语言实现，嵌套在JVM内部；</li>
+<li>它用来加载Java的核心库（JAVA_HOME/jre/lib/rt.jar, resources.jar或sun.boot.class.path路径下的内容）用于提供JVM自身需要的类；</li>
+<li><strong>并不继承自java.lang.ClassLoader,没有父加载器</strong>；</li>
+<li>加载拓展类和应用程序类加载器，并指定为为他们的父类加载器；</li>
+<li>处于安全考虑，<strong>Bootstrap启动类加载器只加载包名为java/javax/sun等开头的类</strong></li>
+</ul>
+<h3 id="43-拓展类加载器extension-classloader"><a class="header" href="#43-拓展类加载器extension-classloader">4.3 拓展类加载器（Extension ClassLoader)</a></h3>
+<ul>
+<li>Java语言编写，由sun.misc.Launcher$ExtClassLoader实现；</li>
+<li><strong>派生于ClassLoader类；</strong></li>
+<li>父类加载器为启动类加载器；</li>
+<li>从java.ext.dirs系统属性所指定的目录中加载类库，或从JDK的安装目录的jre/lib/ext子目录（扩展目录）下加载类库。<strong>如果用户创建的JAR放在此目录下，也会自动由扩展类加载器加载</strong></li>
+</ul>
+<h3 id="44-应用程序类加载器系统类加载器appclassloader"><a class="header" href="#44-应用程序类加载器系统类加载器appclassloader">4.4 应用程序类加载器（系统类加载器，AppClassLoader)</a></h3>
+<ul>
+<li>Java语言编写，由sun.misc.Launcher$AppClassLoader实现；</li>
+<li><strong>派生于ClassLoader类；</strong></li>
+<li>父类加载器为扩展类加载器；</li>
+<li>它负责加载环境变量classpath或系统属性java.class.path指定路径下的类库；</li>
+<li>该类加载是程序中默认的类加载器，一般来说，Java应用的类都是由它来完成加载；</li>
+<li>通过ClassLoader#getSystemClassLoader()方法可以获取到该类加载器</li>
+</ul>
+<p><img src="/images/jvm/2/15.png" alt="image.png" /></p>
+<h3 id="45-用户自定义类加载器"><a class="header" href="#45-用户自定义类加载器">4.5 用户自定义类加载器</a></h3>
+<p>在Java的日常应用程序开发中，类的加载几乎是由上述3中类加载器相互配合执行的，在必要时，我们还可以自定义类加载器，来定制类的加载方式。</p>
+<h4 id="451-自定义类加载器目的"><a class="header" href="#451-自定义类加载器目的">4.5.1 自定义类加载器目的</a></h4>
+<ul>
+<li>隔离加载类</li>
+<li>修改类加载方式</li>
+<li>扩展加载源</li>
+<li>防止源码泄露</li>
+</ul>
+<h4 id="452-自定义类加载器步骤"><a class="header" href="#452-自定义类加载器步骤">4.5.2 自定义类加载器步骤</a></h4>
+<ol>
+<li>开发人员可以通过继承抽象类<strong>java.lang.ClassLoader</strong>类的方式，实现自己的类加载器，以满足一些特殊需求；</li>
+<li>在JDK1.2之前，在自定义类加载器时，总会去继承ClassLoader类并重写loadClass()方法，从而实现自定义的类加载类，但是在JDK1.2之后已不再建议用户去覆盖loadClass()方法，而是建议把自定义的类加载逻辑写在findClass()方法中；</li>
+<li>在编写自定义类加载器时，如果没有太过于复杂的需求，可以直接继承<strong>URLClassLoader</strong>类，这样就可以避免自己去编写findClass()方法及其获取字节码流的方式，使自定义类加载器编写更加简洁</li>
+</ol>
+<h3 id="46-关于classloader"><a class="header" href="#46-关于classloader">4.6 关于ClassLoader</a></h3>
+<p>ClassLoader类是一个抽象类，其后所有的类加载器都继承自ClassLoader（不包括启动类加载器）</p>
+<div class="table-wrapper"><table><thead><tr><th>方法名称</th><th>描述</th></tr></thead><tbody>
+<tr><td>getParent()</td><td>返回该类加载器的超类加载器</td></tr>
+<tr><td>loadClass(String name)</td><td>加载名为name的类，返回结果为java.lang.Class类的实例</td></tr>
+<tr><td>findClass(String name)</td><td>查找名为name的类，返回结果为java.lang.Class类的实例</td></tr>
+<tr><td>findLoadedClass(String name)</td><td>查找名为name的已经被加载过的类，返回结果为java.lang.Class类的实例</td></tr>
+<tr><td>defineClass(String name, byte[] b, int off, int len</td><td>把字节数组b中的内容转换为一个Java类，返回结果为java.lang.Class类的实例</td></tr>
+<tr><td>resolveClass(Class&lt;?&gt; c)</td><td>连接指定的一个Java类</td></tr>
+</tbody></table>
+</div>
+<h2 id="5-双亲委派机制"><a class="header" href="#5-双亲委派机制">5. 双亲委派机制</a></h2>
+<p>Java虚拟机对class文件采用的是按需加载的方式，也就是说当需要使用该类时才会将它的class文件加载到内存生成class对象。而且加载某个类的class文件时，Java虚拟机采用的是双亲委派模式，即把请求交由父类处理，它是一种任务委派模式。</p>
+<h3 id="51-工作原理"><a class="header" href="#51-工作原理">5.1 工作原理</a></h3>
+<ol>
+<li>如果一个类加载器收到了类加载请求，它并不会自己先去加载，而是把这个请求委托给父类的加载器去执行；</li>
+<li>如果父类加载器还存在其父类加载其，则进一步向上委托，依次递归，请求最终将达到顶层的启动类加载器；</li>
+<li>如果父类加载器可以完成类加载任务，就成功返回，倘若父类加载器无法完成此家在任务，子加载器才会尝试自己去加载，这就是双亲委派模式</li>
+</ol>
+<p><img src="/images/jvm/2/16.png" alt="image.png" /></p>
+<h3 id="52-沙箱安全机制"><a class="header" href="#52-沙箱安全机制">5.2 沙箱安全机制</a></h3>
+<p>例如我们自定义包为java.lang并创建同名String.java，执行main方法，则会报错如下：</p>
+<p><img src="/images/jvm/2/17.png" alt="image.png" /></p>
+<p>自定义String类，但是在加载自定义String类的时候会率先使用引导类加载器加载，而引导类加载器在加载的过程中会先加载jdk自带的文件（rt.jar包中的java\lang\String.class），报错信息说没有main方法，就是因为加载的是rt.jar包中的String类，这样可以保证对java核心源代码的保护。这就是<strong>沙箱安全机制</strong></p>
+<p>如果我们在自定义java.lang包下创建其他不在rt.jar包下定义的class，则会报错如下：</p>
+<p><img src="/images/jvm/2/18.png" alt="image.png" /></p>
+<h3 id="53-优势"><a class="header" href="#53-优势">5.3 优势</a></h3>
+<ul>
+<li>避免类的重复加载</li>
+<li>保护程序安全，防止核心API被随意篡改</li>
+</ul>
+<h2 id="6-其他"><a class="header" href="#6-其他">6. 其他</a></h2>
+<h3 id="61-两个class对象是否为同一个类的两个必要条件"><a class="header" href="#61-两个class对象是否为同一个类的两个必要条件">6.1 两个class对象是否为同一个类的两个必要条件：</a></h3>
+<ul>
+<li>类的完整类名必须一致，包括包名；</li>
+<li>加载这个类的ClassLoader（指ClassLoader实例对象）必须相同；换句话说，在JVM中，即使这两个类对象（class对象）来源同一个class文件，被同一个虚拟机所加载，但只要加载他们的ClassLoader实例对象不同，那么这两个类也是不相等的</li>
+</ul>
+<h3 id="62-对类加载器的引用"><a class="header" href="#62-对类加载器的引用">6.2 对类加载器的引用</a></h3>
+<p>JVM必须知道一个类型是由启动类加载器加载还是由用户类加载器加载的。如果一个类型是由用户类加载器加载的，那么JVM会<strong>将这个类加载器的一个引用作为类型信息的一部分保存在方法区中</strong>。当解析一个类型到另一个类型的引用时，JVM需要保证这两个类型的类加载器是相同的</p>
+<h3 id="63-类的主动使用和被动使用"><a class="header" href="#63-类的主动使用和被动使用">6.3 类的主动使用和被动使用</a></h3>
+<ul>
+<li>主动使用（分为7种情况）
+<ul>
+<li>创建类的实例</li>
+<li>访问某个类或接口的静态变量，或对该静态变量赋值</li>
+<li>调用类的静态方法</li>
+<li>反射，比如Class.forName(&quot;com.nasuf.test&quot;)</li>
+<li>初始化一个类的子类</li>
+<li>Java虚拟机启动时被标明为启动类的类</li>
+<li>JDK 7 开始提供的动态语言支持：java.lang.invoke.MethodHandle实例的解析结果REF_getStatic, REF_putStatic, REF_invokeStatic句柄对应的类没有初始化，则初始化</li>
+</ul>
+</li>
+<li>除了以上七种情况，其他使用Java类的方式都被看做是对类的被动使用，都不会导致类的初始化（即上文中提到的类加载过程中的初始化环节）</li>
+</ul>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../JVM/01_概览.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../JVM/03_运行时数据区（线程和程序计数器）.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../JVM/01_概览.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../JVM/03_运行时数据区（线程和程序计数器）.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+        <!-- Livereload script (if served using the cli tool) -->
+        <script>
+            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsAddress = wsProtocol + "//" + location.host + "/" + "__livereload";
+            const socket = new WebSocket(wsAddress);
+            socket.onmessage = function (event) {
+                if (event.data === "reload") {
+                    socket.close();
+                    location.reload();
+                }
+            };
+
+            window.onbeforeunload = function() {
+                socket.close();
+            }
+        </script>
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr.min.js"></script>
+        <script src="../mark.min.js"></script>
+        <script src="../searcher.js"></script>
+
+        <script src="../clipboard.min.js"></script>
+        <script src="../highlight.js"></script>
+        <script src="../book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>

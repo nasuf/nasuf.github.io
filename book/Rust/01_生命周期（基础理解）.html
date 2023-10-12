@@ -1,0 +1,562 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>生命周期-基础理解 - NASUF Dev Notes</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../highlight.css">
+        <link rel="stylesheet" href="../tomorrow-night.css">
+        <link rel="stylesheet" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('light')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded "><a href="../JVM/index.html"><strong aria-hidden="true">1.</strong> Jvm</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../JVM/01_概览.html"><strong aria-hidden="true">1.1.</strong> 概览</a></li><li class="chapter-item expanded "><a href="../JVM/02_类加载子系统.html"><strong aria-hidden="true">1.2.</strong> 类加载子系统</a></li><li class="chapter-item expanded "><a href="../JVM/03_运行时数据区（线程和程序计数器）.html"><strong aria-hidden="true">1.3.</strong> 运行时数据区（线程和程序计数器）</a></li><li class="chapter-item expanded "><a href="../JVM/04_本地方法接口.html"><strong aria-hidden="true">1.4.</strong> 本地方法接口</a></li><li class="chapter-item expanded "><a href="../JVM/05_运行时数据区（虚拟机栈和本地方法栈）.html"><strong aria-hidden="true">1.5.</strong> 运行时数据区（虚拟机栈和本地方法栈）</a></li></ol></li><li class="chapter-item expanded "><a href="../Rust/index.html"><strong aria-hidden="true">2.</strong> Rust</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../Rust/01_生命周期（基础理解）.html" class="active"><strong aria-hidden="true">2.1.</strong> 生命周期-基础理解</a></li></ol></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">NASUF Dev Notes</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <p>在rust语言中，生命周期的概念和使用是重难点之一。让我们一步步来深入了解这个内容。</p>
+<h2 id="一基本理解"><a class="header" href="#一基本理解">一、基本理解</a></h2>
+<p>我们先来看下面一段代码：</p>
+<pre><pre class="playground"><code class="language-rust">fn main() {
+    let x;
+    {
+        let y = 5;
+        x = &amp;y;
+    } // #1
+    println!(&quot;x: {}&quot;, x); // #2
+}</code></pre></pre>
+<p>编译后输出如下：</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>error[E0597]: `y` does not live long enough
+ --&gt; src/main.rs:6:13
+  |
+6 |         x = &amp;y;
+  |             ^^ borrowed value does not live long enough
+7 |     }
+  |     - `y` dropped here while still borrowed
+8 |     println!(&quot;x: {}&quot;, x);
+  |                       - borrow later used here
+<span class="boring">}</span></code></pre></pre>
+<p>从编译错误输出可以看出，变量<code>y</code>的作用域在<code>#1</code>处结束，变量<code>x</code>拥有一个更大的作用域，在<code>#2</code>处结束，但是<code>x</code>引用了<code>y</code>，导致当<code>y</code>的作用域结束时，<code>x</code>指向的<code>y</code>的内存空间被释放，属于无效引用。这个例子其实是一个典型的悬垂引用。<strong>rust中的生命周期标注就是要避免这种悬垂引用产生的内存安全问题。</strong></p>
+<p>我们来看下面这个具体的生命周期标注的例子是如何避免悬垂引用的。</p>
+<pre><pre class="playground"><code class="language-rust">fn main() {
+    let x = String::from(&quot;xxxx&quot;);
+    let result;
+    {
+        let y = String::from(&quot;xx&quot;);
+        result = longest(x.as_str(), y.as_str());
+    }
+    println!(&quot;{}&quot;, result);
+}
+
+fn longest(x: &amp;str, y: &amp;str) -&gt; &amp;str {
+    if x.len() &gt; y.len() {
+        x
+    } else {
+        y
+    }
+}</code></pre></pre>
+<p>首先，直观理解我们可以看出，result最终应该引用的是变量<code>x</code>，而不是<code>y</code>，所以不应该出现悬垂引用问题。但是站在函数<code>longest(x: &amp;str, y: &amp;str)</code>调用方的角度来看，并不能保证调用方在传给该函数参数后，计算结果总是保证变量<code>x</code>的长度更长，也就是说代码依然可能返回<code>y</code>。所以编译上述代码时，编译错误是关于<code>longest(x: &amp;str, y: &amp;str)</code>函数的，<code>main</code>方法中没有编译错误：</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>error[E0106]: missing lifetime specifier
+  --&gt; src/main.rs:11:33
+   |
+11 | fn longest(x: &amp;str, y: &amp;str) -&gt; &amp;str {
+   |               ----     ----     ^ expected named lifetime parameter
+   |
+   = help: this function's return type contains a borrowed value, but the signature does not say whether it is borrowed from `x` or `y`
+help: consider introducing a named lifetime parameter
+   |
+11 | fn longest&lt;'a&gt;(x: &amp;'a str, y: &amp;'a str) -&gt; &amp;'a str {
+   |           ++++     ++          ++          ++
+<span class="boring">}</span></code></pre></pre>
+<p>上述编译错误表明，我们需要显式给<code>longest(x: &amp;str, y: &amp;str)</code>函数标注<code>&lt;'a&gt;</code>也就是生命周期标注。该标注表明：<strong>两个函数入参和返回值参数，至少都应该活得和<code>a</code>一样长；而<code>a</code>具体表明的生命周期应该是等于两个入参和返回值中生命周期最短的那个</strong>。</p>
+<p><strong>请注意，生命周期标注并不会改变参数的实际生命周期，只是站在函数本身来说，函数的调用方应该保证函数入参和返回值应该具有的生命周期范围；如果不能保证那么编译器将拒绝该函数编译通过，继而无法执行。因此生命周期标注仅仅是为了告诉编译器，帮我检查该函数调用方是否符合函数要求的生命周期而已。</strong></p>
+<p>现在我们按照提示修改<code>longest(x: &amp;str, y: &amp;str)</code>函数如下，<code>main</code>函数不做修改（<strong>请注意，生命周期标注属于参数类型的一部分，所以函数名后需要有类似泛型的标注，来表明<code>'a</code>是在说明参数类型</strong>）：</p>
+<pre><pre class="playground"><code class="language-rust">fn main() {
+    let x = String::from(&quot;xxxx&quot;);
+    let result;
+    {
+        let y = String::from(&quot;xx&quot;);
+        result = longest(x.as_str(), y.as_str());
+    } // #1
+    println!(&quot;{}&quot;, result); // #2
+}
+
+fn longest&lt;'a&gt;(x: &amp;'a str, y: &amp;'a str) -&gt; &amp;'a str {
+    if x.len() &gt; y.len() {
+        x
+    } else {
+        y
+    }
+}</code></pre></pre>
+<p>再次编译后输出如下错误：</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>error[E0597]: `y` does not live long enough
+ --&gt; src/main.rs:6:30
+  |
+6 |         result = longest(&amp;x, y.as_str());
+  |                              ^^^^^^^^^^ borrowed value does not live long enough
+7 |     }
+  |     - `y` dropped here while still borrowed
+8 |     println!(&quot;{}&quot;, result);
+  |                    ------ borrow later used here
+<span class="boring">}</span></code></pre></pre>
+<p>此时<code>main</code>函数会出现编译错误，提示变量<code>y</code>活得不够久，也就是作用域结束太早，出现了悬垂引用问题。</p>
+<p>我们来分析一下：首先<code>longest&lt;'a&gt;(x: &amp;'a str, y: &amp;'a str) -&gt; &amp;'a str</code>函数签名表明所有入参和返回值的生命周期应该是三者中最小的那个。此时，函数调用方中<code>x</code>变量在<code>#2</code>处被释放，<code>y</code>在<code>#1</code>处被释放，所以<code>'a</code>表示的生命周期应该是<code>y</code>变量的生命周期；同时，因为返回值的生命周期标注也是<code>'a</code>，所以返回值的生命周期也应该是<code>y</code>变量的生命周期。但是从代码可以看出，显然<code>result</code>作为函数的返回值，最终是在<code>#2</code>处被释放，需要的生命周期大于<code>y</code>变量的生命周期，所以最终编译器判定该函数调用方的参数和返回值不满足函数体所标注的生命周期，编译失败。</p>
+<p>如果我们将<code>main</code>函数稍作修改如下：</p>
+<pre><pre class="playground"><code class="language-rust">fn main() {
+    let x = String::from(&quot;xxxx&quot;); // #1
+    let result;
+    {
+        let y = String::from(&quot;xx&quot;);
+        result = longest(x.as_str(), y.as_str());
+        println!(&quot;{}&quot;, result);
+    } // #2
+}</code></pre></pre>
+<p>此时函数入参<code>x</code>和<code>y</code>以及返回值<code>result</code>皆在<code>#2</code>处被释放，实际生命周期跟函数标注所需要的生命周期相同，因此编译通过。</p>
+<p>有一个问题需要注意，我们讨论的所谓“生命周期”，指的是<strong>变量被释放的位置</strong>，<strong>而非变量在整个程序中实际存活的时间</strong>。例如上述代码中，变量<code>x</code>是在<code>#1</code>处被定义，存活时间明显比变量<code>y</code>和<code>result</code>要长，但是他们同时在<code>#2</code>处被释放，因此满足<code>longest</code>函数的生命周期标注。 另外，我们在讨论生命周期的问题时，关注的是与所有权转移相关的情况，而如果单纯的是引用拷贝，不涉及所有权转移的情况下，生命周期问题不会影响编译过程。例如修改代码如下：</p>
+<pre><pre class="playground"><code class="language-rust">fn main() {
+    let x = &quot;xxx&quot;;
+    let result;
+    {
+        let y = &quot;xx&quot;;
+        result = longest(x, y);
+    }
+    println!(&quot;{}&quot;, result);
+}
+
+fn longest&lt;'a&gt;(x: &amp;'a str, y: &amp;'a str) -&gt; &amp;'a str {
+    if x.len() &gt; y.len() {
+        x
+    } else {
+        y
+    }
+}</code></pre></pre>
+<p>此时<code>x</code>和<code>y</code>都是字符串切片类型<code>&amp;str</code>，变量<code>result</code>最终只是获取到了<code>x</code>或<code>y</code>字符串切片引用拷贝，不涉及所有权转移，因此上述生命周期的分析过程不再适用，也不会出现编译问题。</p>
+<h2 id="二深入理解生命周期标注"><a class="header" href="#二深入理解生命周期标注">二、深入理解生命周期标注</a></h2>
+<p>如上文所述，函数的生命周期标注并不会影响参数和返回值的实际生命周期，只是为了让编译器知道调用者应该满足的条件，否则编译失败。</p>
+<p>另外，返回值的生命周期来源只能有两种：</p>
+<ul>
+<li><strong>函数入参的生命周期</strong></li>
+<li><strong>函数内部自建引用的生命周期</strong></li>
+</ul>
+<p>函数入参的生命周期比较好理解，由于函数生命周期标注能够将函数的入参和返回值关联起来，那么当返回值只与某一部分函数入参相关时，我们无需将所有函数入参都进行生命周期标注。例如如下代码：</p>
+<pre><pre class="playground"><code class="language-rust">fn main() {
+    let x = String::from(&quot;xxx&quot;);
+    let result;
+    {
+        let y = String::from(&quot;xx&quot;);
+        result = longest(x.as_str(), y.as_str());
+    }
+    println!(&quot;{}&quot;, result);
+}
+
+fn longest&lt;'a&gt;(x: &amp;'a str, y: &amp;str) -&gt; &amp;'a str {
+    println!(&quot;{}, {}&quot;, x, y);
+    x
+}</code></pre></pre>
+<p>由于函数<code>longest&lt;'a&gt;(x: &amp;'a str, y: &amp;str)</code>返回值仅与参数<code>x</code>有关，参数<code>y</code>无需进行生命周期标注。</p>
+<p>而使用函数内部自建引用的生命周期进行返回值的生命周期标注，就会产生悬垂引用的问题：</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>fn longest&lt;'a&gt;(x: &amp;str, y: &amp;str) -&gt; &amp;'a str {
+    let t = String::from(&quot;xx&quot;);
+    &amp;t
+}
+<span class="boring">}</span></code></pre></pre>
+<p>编译错误如下：</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>error[E0515]: cannot return reference to local variable `t`
+  --&gt; src/main.rs:13:5
+   |
+13 |     &amp;t
+   |     ^^ returns a reference to data owned by the current function
+<span class="boring">}</span></code></pre></pre>
+<h2 id="三结构体生命周期标注"><a class="header" href="#三结构体生命周期标注">三、结构体生命周期标注</a></h2>
+<p>与函数体的生命周期标注类似，结构体也需要对引用类型进行生命周期标注：</p>
+<pre><pre class="playground"><code class="language-rust">struct Foo&lt;'a&gt; {
+    test: &amp;'a str,
+}
+
+fn main() {
+    let x = String::from(&quot;xxx&quot;);
+    let foo = Foo { test: x.as_str() };
+    println!(&quot;{}&quot;, foo.test);
+}</code></pre></pre>
+<p><strong>该生命周期标注表明，引用类型<code>test</code>不能比结构体引用被释放得更早</strong>。如果我们将代码修改如下：</p>
+<pre><pre class="playground"><code class="language-rust">struct Foo&lt;'a&gt; {
+    test: &amp;'a str,
+}
+
+fn main() {
+    let foo;
+    {
+        let x = String::from(&quot;xxx&quot;);
+        foo = Foo { test: x.as_str() };
+    } // #1
+    println!(&quot;{}&quot;, foo.test); // #2
+}</code></pre></pre>
+<p>变量<code>x</code>在<code>#1</code>处被释放，而结构体引用<code>foo</code>在<code>#2</code>处被释放，<code>x</code>存活的时间比结构体引用要短，所以编译报错：</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>error[E0597]: `x` does not live long enough
+  --&gt; src/main.rs:9:27
+   |
+9  |         foo = Foo { test: x.as_str() };
+   |                           ^^^^^^^^^^ borrowed value does not live long enough
+10 |     } // #1
+   |     - `x` dropped here while still borrowed
+11 |     println!(&quot;{}&quot;, foo.test); // #2
+   |                    -------- borrow later used here
+<span class="boring">}</span></code></pre></pre>
+<h2 id="四生命周期标注消除规则"><a class="header" href="#四生命周期标注消除规则">四、生命周期标注消除规则</a></h2>
+<p>rust规定每一个引用类型的参数或返回值都必须具有生命周期。但是日常在代码编写过程中，我们并不一定需要显式标注。rust为我们提供了三条消除规则，以便在某些情况下避免手动标注生命周期（生命周期还是有的，只是无需开发者标注而已）。其中第一条是针对输入参数，第二条和第三条针对输出参数。</p>
+<blockquote>
+<p>（一）每一个引用参数都具有各自的生命周期（针对输入参数）</p>
+</blockquote>
+<p>例如函数<code>fn foo(x: &amp;'a str)</code>只存在一个输入参数，编译器会自动给其标注<code>'a</code>生命周期；当函数存在多个输入参数，它们各自也会被编译器标注各自的生命周期：<code>fn foo(x: &amp;'a str, y: &amp;'b str)</code></p>
+<blockquote>
+<p>（二）如果函数只存在一个输入参数，那么该输入参数的生命周期将自动被赋给所有输出参数</p>
+</blockquote>
+<p>例如函数<code>fn foo(x: &amp;'a str) -&gt; &amp;'a str {...}</code>只存在一个输入参数<code>x</code>，则其生命周期<code>'a</code>将被自动赋给输出参数也即返回值。</p>
+<blockquote>
+<p>（三）如果函数存在多个输入参数，但是包含了<code>&amp;self</code>或者<code>&amp;mut self</code>，那么该<code>self</code>引用的生命周期将被赋给所有输出参数</p>
+</blockquote>
+<p>存在<code>&amp;self</code>或<code>&amp;mut self</code>输入参数的函数称为方法(<code>method</code>)。例如方法<code>fn new(x: &amp;'a self, y: &amp;i32) -&gt; &amp;'a i32 {...}</code>，输出参数具有输入参数<code>&amp;self</code>相同的生命周期<code>'a</code>。此处需要再次强调，这是编译器默认标注的生命周期，假如方法实际的输出参数生命周期跟<code>&amp;self</code>并不相同，则需要进行显式标注。具体细节在下一节阐述。</p>
+<h2 id="五方法的生命周期标注"><a class="header" href="#五方法的生命周期标注">五、方法的生命周期标注</a></h2>
+<p>由于生命周期属于参数类型的一部分，所以方法的生命周期标注类似于泛型的使用。在泛型中，我们可以做如下定义：</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>struct Foo&lt;T&gt; {
+    x: T,
+}
+
+impl&lt;T&gt; Foo&lt;T&gt; {
+    fn x(&amp;self) -&gt; &amp;T {
+        &amp;self.x
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<p>类似地，当结构体包含了引用类型的参数时，为其实现方法的语法也应该注意生命周期的标注。</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>struct Foo&lt;'a&gt; {
+    x: &amp;'a str,
+}
+
+impl&lt;'a&gt; Foo&lt;'a&gt; {
+    fn x(&amp;self, y: &amp;str) -&gt; &amp;str {
+        println!(&quot;{}&quot;, y);
+        &amp;self.x
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<p>但是注意，具体的方法在默认情况下，不需要进行额外的生命周期标注也能通过编译器编译，这是由于上一节中提到的生命周期标注消除规则的第一条和第三条，编译器为方法自动标注了生命周期。具体过程如下：首先根据第一条规则，编译器会给方法的每个输入参数都各自标记生命周期<code>'a</code>和<code>'b</code>；然后根据第三条规则，为输出参数标记输入参数<code>&amp;self</code>的生命周期<code>'a</code>：</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>impl&lt;'a&gt; Foo&lt;'a&gt; {
+    fn x&lt;'b&gt;(&amp;'a self, y: &amp;'b str) -&gt; &amp;'a str {
+        println!(&quot;{}&quot;, y);
+        &amp;self.x
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<p>由于上述标注是编译器在编译时自动进行的，我们实际代码就可以简化如下，方法签名中不包含任何生命周期标注：</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>impl&lt;'a&gt; Foo&lt;'a&gt; {
+    fn x(&amp;self, y: &amp;str) -&gt; &amp;str {
+        println!(&quot;{}&quot;, y);
+        &amp;self.x
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<p>但是假如我们实际代码要求返回值的生命周期不为<code>'a</code>，而是<code>'b</code>，也就是说现在如果我们显式给输入参数和输出参数标注生命周期，且与编译器默认的标注不同时：</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>impl&lt;'a&gt; Foo&lt;'a&gt; {
+    fn x&lt;'b&gt;(&amp;'a self, y: &amp;'b str) -&gt; &amp;'b str {
+        println!(&quot;{}&quot;, y);
+        &amp;self.x
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<p>会得到如下编译错误：</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>error: lifetime may not live long enough
+ --&gt; src/main.rs:8:9
+  |
+5 | impl&lt;'a&gt; Foo&lt;'a&gt; {
+  |      -- lifetime `'a` defined here
+6 |     fn x&lt;'b&gt;(&amp;'a self, y: &amp;'b str) -&gt; &amp;'b str {
+  |          -- lifetime `'b` defined here
+7 |         println!(&quot;{}&quot;, y);
+8 |         &amp;self.x
+  |         ^^^^^^^ method was supposed to return data with lifetime `'b` but it is returning data with lifetime `'a`
+  |
+  = help: consider adding the following bound: `'a: 'b`
+<span class="boring">}</span></code></pre></pre>
+<p>由于<code>&amp;self</code>的生命周期为<code>'a</code>，那么<code>&amp;self.x</code>的生命周期也为<code>'a</code>，所以当<code>&amp;self.x</code>作为方法返回值时，返回值的生命周期也应该为<code>'a</code>，但是此时我们给方法返回值标注的生命周期为<code>'b</code>。假如<code>'b</code>生命周期比<code>'a</code>长，也就是说返回给方法调用者的<code>&amp;self.x</code>活得比<code>&amp;self</code>更久。而当<code>&amp;self</code>引用被释放后，原本<code>&amp;self.x</code>也应该不存在，可是现在实际上的引用<code>&amp;self.x</code>的生命周期<code>'b</code>依然存活，因为我们假定的是<code>'b</code>长于<code>'a</code>，所以这种假定就是不合理的。因此我们需要假定并告知编译器<code>'a</code>长于<code>'b</code>。这里有两种写法：</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>impl&lt;'a: 'b, 'b&gt; Foo&lt;'a&gt; {
+    fn x(&amp;'a self, y: &amp;'b str) -&gt; &amp;'b str {
+        println!(&quot;{}&quot;, y);
+        &amp;self.x
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<p>其中<code>'a: 'b</code>表明生命周期<code>'a</code>长于<code>'b</code>；另一种写法是：</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>impl&lt;'a, 'b&gt; Foo&lt;'a&gt;
+where
+    'a: 'b,
+{
+    fn x(&amp;'a self, y: &amp;'b str) -&gt; &amp;'b str {
+        println!(&quot;{}&quot;, y);
+        &amp;self.x
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="六泛型--生命周期标注"><a class="header" href="#六泛型--生命周期标注">六、泛型 + 生命周期标注</a></h2>
+<p>最后我们来看一个相对综合的例子，结合了泛型和生命周期的标注语法：</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>fn longest&lt;'a, T&gt;(x: &amp;'a str, y: &amp;'a str, z: T) -&gt; &amp;'a str
+where
+    T: Display,
+{
+    println!(&quot;{}&quot;, z);
+    if x.len() &gt; y.len() {
+        x
+    } else {
+        y
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../Rust/index.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../Rust/index.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+            </nav>
+
+        </div>
+
+        <!-- Livereload script (if served using the cli tool) -->
+        <script>
+            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsAddress = wsProtocol + "//" + location.host + "/" + "__livereload";
+            const socket = new WebSocket(wsAddress);
+            socket.onmessage = function (event) {
+                if (event.data === "reload") {
+                    socket.close();
+                    location.reload();
+                }
+            };
+
+            window.onbeforeunload = function() {
+                socket.close();
+            }
+        </script>
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr.min.js"></script>
+        <script src="../mark.min.js"></script>
+        <script src="../searcher.js"></script>
+
+        <script src="../clipboard.min.js"></script>
+        <script src="../highlight.js"></script>
+        <script src="../book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>
