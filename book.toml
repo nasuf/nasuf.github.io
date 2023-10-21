@@ -5,13 +5,9 @@ multilingual = false
 src = "src"
 title = "NASUF Dev Notes"
 
-#[preprocessor]
-
-#[preprocessor.catppuccin]
-#assets_version = "2.0.1" # DO NOT EDIT: Managed by `mdbook-catppuccin install`
-
 [output.html.fold]
 enable = true
 
-#[output.html]
-#additional-css = ["./theme/catppuccin.css", "./theme/catppuccin-admonish.css"]
+[output.html]
+git-repository-url = "https://github.com/nasuf/nasuf.github.io/tree/main/src"
+git-repository-icon = "fa-github"

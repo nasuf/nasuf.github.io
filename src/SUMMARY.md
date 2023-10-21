@@ -24,6 +24,6 @@
 - [Rust](./Rust/README.md)
   - [生命周期-基础理解](./Rust/01_生命周期（基础理解）.md)
 - [算法](./Algorithm/README.md)
-  - [二叉树](./BinaryTree/README.md)
+  - [二叉树](./Algorithm/BinaryTree/README.md)
     - [前序遍历 [leetcode 144]](./Algorithm/BinaryTree/01_二叉树的前序遍历（leetcode[144]）.md)
     - [中序遍历[leetcode 94]](./Algorithm/BinaryTree/02_二叉树的中序遍历（leetcode[194]）.md)
