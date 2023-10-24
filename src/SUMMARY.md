@@ -27,3 +27,6 @@
   - [二叉树](./Algorithm/BinaryTree/README.md)
     - [前序遍历 [leetcode 144]](./Algorithm/BinaryTree/01_二叉树的前序遍历（leetcode[144]）.md)
     - [中序遍历[leetcode 94]](./Algorithm/BinaryTree/02_二叉树的中序遍历（leetcode[194]）.md)
+- [小说/随笔](./Novels/README.md)
+  - [灰土纪元](./Novels/灰土纪元.md)
+  - [捞月](./Novels/捞月.md)
