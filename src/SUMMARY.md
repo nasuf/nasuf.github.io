@@ -32,3 +32,5 @@
   - [捞月](./Novels/捞月.md)
 - [AMPS](./AMPS/SUMMARY.md)
   - [How to Install AMPS on Apple Sillicon](./AMPS/How_to_Install_AMPS_on_Apple_Silicon.md)
+- [Reading List](./ReadingList/README.md)
+  - [2023](./ReadingList/2023.md)
