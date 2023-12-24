@@ -33,6 +33,7 @@
 - [AMPS](./AMPS/SUMMARY.md)
   - [How to Install AMPS on Apple Sillicon](./AMPS/How_to_Install_AMPS_on_Apple_Silicon.md)
 - [Reading List](./ReadingList/README.md)
+  - [2017 (122)](./ReadingList/2017.md)
   - [2018 (33)](./ReadingList/2018.md)
   - [2019 (9)](./ReadingList/2019.md)
   - [2020 (1)](./ReadingList/2020.md)
