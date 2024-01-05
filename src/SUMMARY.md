@@ -32,7 +32,7 @@
   - [捞月](./Novels/捞月.md)
 - [AMPS](./AMPS/SUMMARY.md)
   - [How to Install AMPS on Apple Sillicon](./AMPS/How_to_Install_AMPS_on_Apple_Silicon.md)
-- [Reading List (462)](./ReadingList/README.md)
+- [Reading List (463)](./ReadingList/README.md)
   - [Before 2017 (164)](./ReadingList/Before_2017.md)
   - [2017 (122)](./ReadingList/2017.md)
   - [2018 (33)](./ReadingList/2018.md)
@@ -41,3 +41,4 @@
   - [2021 (19)](./ReadingList/2021.md)
   - [2022  (72)](./ReadingList/2022.md)
   - [2023 (42)](./ReadingList/2023.md)
+  - [2024 (1)](./ReadingList/2024.md)
