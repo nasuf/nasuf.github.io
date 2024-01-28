@@ -43,4 +43,4 @@
   - [2021 (19)](./ReadingList/2021.md)
   - [2022  (72)](./ReadingList/2022.md)
   - [2023 (42)](./ReadingList/2023.md)
-  - [2024 (1)](./ReadingList/2024.md)
+  - [2024 (2)](./ReadingList/2024.md)
