@@ -11,3 +11,4 @@ enable = true
 [output.html]
 git-repository-url = "https://github.com/nasuf/nasuf.github.io/tree/main/src"
 git-repository-icon = "fa-github"
+no-section-label = true
