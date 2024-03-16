@@ -1,6 +1,8 @@
-## 6 Park & Unpark
+# 6 Park & Unpark
 
-基本使用：
+## 6.1 基本使用
+
+示例代码：
 
 ```java
 // 暂停当前线程
@@ -78,7 +80,7 @@ public class LockSupportTest {
 - `park & unpark`是以线程为单位来阻塞和唤醒线程的，而`notify`只能随机唤醒一个等待线程，`notifyAll`是唤醒所有等待线程，不那么精确
 - `park & unpark`可以先`unpark`，而`wait & notify`不可以先`notify`
 
-### 6.1  原理之park & unpark
+## 6.2  原理之park & unpark
 
 每个线程都有自己的一个Parker对象（底层由C语言实现），由三部分组成：`_counter`，`_cond`和`_mutex`。打个比喻：
 

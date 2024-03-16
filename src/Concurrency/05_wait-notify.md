@@ -1,6 +1,6 @@
-## 5 wait-notify
+# 5 wait-notify
 
-### 5.1 原理
+## 5.1 原理
 
 ![image-20240218下午35341224](../images/concurrency/39.png)
 
@@ -11,7 +11,7 @@
 - `BLOCKED`线程会在Ower线程释放锁是被唤醒
 - `WAITING`线程会在Owner线程调用`notify`或`notifyAll`时被唤醒，但被唤醒后并不意味着立刻获得锁，仍需要进入`EntryList`重新竞争
 
-### 5.2 API介绍
+## 5.2 API介绍
 
 - `obj.wait()`让进入object监视器的线程到`WaitSet`中等待
 - `obj.notify()`让在object上正在`WaitSet`中等待的线程中挑选一个唤醒
@@ -19,7 +19,7 @@
 
 它们都是线程之间进行协作的手段，都属于`Object`类的方法，必须获得此对象的锁，才能调用这几个方法。
 
-#### 5.2.1 wait
+### 5.2.1 wait
 
 ```java
 @Slf4j(topic = "c.WaitNotifyTest")
@@ -148,7 +148,7 @@ public final void wait(long timeout, int nanos) throws InterruptedException {
 
 从源码可以看出，该方法并不是精确到`nano`。
 
-#### 5.2.2 notify
+### 5.2.2 notify
 
 ```java
 @Slf4j(topic = "c.WaitNotifyTest")
@@ -216,7 +216,7 @@ synchronized (obj) {
 18:52:13.649 [t1] c.WaitNotifyTest - Running other codes.
 ```
 
-### 5.3 wait-notify的正确使用方式
+## 5.3 wait-notify的正确使用方式
 
 > sleep(long n)和wait(long n)的区别
 
@@ -294,7 +294,7 @@ public class WaitNotifyTest {
 19:23:44.081 [main] c.WaitNotifyTest - Main thread got lock
 ```
 
-#### 5.3.1 代码优化 step1
+### 5.3.1 代码优化 step1
 
 ```java
 @Slf4j(topic = "c.WaitNotifyTest")
@@ -381,7 +381,7 @@ new Thread(() -> {
 10:40:44.321 [OtherPerson] c.WaitNotifyTest - 可以开始干活了！
 ```
 
-#### 5.3.2 代码优化 step2
+### 5.3.2 代码优化 step2
 
 ```java
 @Slf4j(topic = "c.WaitNotifyTest")
@@ -450,7 +450,7 @@ public class WaitNotifyTest {
 - ManA线程notify等待在room锁对象上的线程后，PersonA可以继续执行自己的任务代码
 - 但是，如果同时有其他线程也等待在room对象锁上，ManA线程执行notify后，有可能会错误唤醒了其他线程，而非PersonA线程。参考下面的章节代码
 
-#### 5.3.3 代码优化 step3
+### 5.3.3 代码优化 step3
 
 ```java
 @Slf4j(topic = "c.WaitNotifyTest")
@@ -556,7 +556,7 @@ new Thread(() -> {
 
 这时可以唤醒PersonB，但是PersonA线程也被唤醒错误唤醒，无法正确执行任务代码
 
-#### 5.3.4 代码优化 step4
+### 5.3.4 代码优化 step4
 
 ```java
 @Slf4j(topic = "c.WaitNotifyTest")
@@ -647,7 +647,7 @@ synchronized(lock) {
 }
 ```
 
-### 5.3 同步模式之保护性暂停
+## 5.3 同步模式之保护性暂停
 
 即`Guarded Suspension`，用在一个线程等待另一个线程的执行结果
 
@@ -991,7 +991,7 @@ class GuardedObject {
 
 需要注意，这种**保护性暂停模式**，是一一对应的模式，即一个线程产生的结果，需要固定的另一个线程来处理。如果是非一一对应模式，就是下一节的**生产者消费者模式**
 
-### 5.4 异步模式之生产者 / 消费者
+## 5.4 异步模式之生产者 / 消费者
 
 > 要点
 

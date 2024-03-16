@@ -1,4 +1,4 @@
-## 9 ReentrantLock
+# 9 ReentrantLock
 
 相对于`synchronized`，都支持可重入，但是它另外具备如下特点：
 
@@ -21,7 +21,7 @@ try {
 
 
 
-### 9.1 可重入
+## 9.1 可重入
 
 可重入是指同一个线程如果首次获得了这把锁，那么因为它是这把锁的拥有者，因此有权利再次获取这把锁。如果是不可重入锁，那么第二次获得锁时，自己也会被锁挡住
 
@@ -71,7 +71,7 @@ public class ReentrantLockTest {
 20:12:40.278 [main] c.ReentrantLockTest - m2 method
 ```
 
-### 9.2 可打断
+## 9.2 可打断
 
 首先，如果主线程首先获得了锁，那么线程t1就无法获得锁：
 
@@ -197,7 +197,7 @@ public class ReentrantLockTest2 {
 20:28:22.191 [main] c.ReentrantLockTest2 - main thread to interrupt t1 thread
 ```
 
-### 9.3 锁超时
+## 9.3 锁超时
 
 使用`lock.tryLock()`尝试获取锁，返回是否获得锁的结果：
 
@@ -351,7 +351,7 @@ public class ReentrantLockTest3 {
 19:19:07.853 [t1] c.ReentrantLockTest3 - lock acquired.
 ```
 
-#### 9.3.1 解决哲学家就餐问题
+### 9.3.1 解决哲学家就餐问题
 
 在之前的章节我们讨论过哲学家就餐问题，代码容易出现死锁：
 
@@ -458,7 +458,7 @@ class Chopstick extends ReentrantLock {
 
 如上使用`tryLock()`可以解决死锁问题
 
-### 9.4 公平锁
+## 9.4 公平锁
 
 ReentrantLock默认是不公平的，源码如下：
 
@@ -484,7 +484,7 @@ ReentrantLock默认是不公平的，源码如下：
 
 公平锁一般没有必要，会降低并发度。
 
-### 9.5 条件变量
+## 9.5 条件变量
 
 `synchronized`中也有条件变量，就是我们讲原理章节那个`waitSet`休息室，当条件不满足时进入`waitSet`等待。`ReentrantLock`的条件变量比`synchronized`强大之处在于，它是支持多个条件变量的。就好比：
 
@@ -644,11 +644,13 @@ public class ReentrantLockTest4 {
 12:43:36.786 [PersonA] c.ReentrantLockTest4 - 可以开始干活了！
 ```
 
-### 9.6 同步模式之顺序控制
+## 9.6 同步模式顺序控制
+
+### 9.6.1 固定顺序
 
 **要求：先输出`2`再输出`1**`
 
-> wait-notify 方式
+#### 9.6.1.1 wait-notify 方式
 
 ```java
 @Slf4j(topic = "c.OrderControlTest1")
@@ -691,7 +693,7 @@ public class OrderControlTest1 {
 11:12:52.818 [t1] c.OrderControlTest1 - 1
 ```
 
-> ReentrantLock & Condition 方式
+#### 9.6.1.2 ReentrantLock & Condition 方式
 
 ```java
 @Slf4j(topic = "c.OrderControlTest2")
@@ -743,7 +745,7 @@ public class OrderControlTest2 {
 11:22:45.771 [t1] c.OrderControlTest2 - 1
 ```
 
-> park & unpart 方式
+#### 9.6.1.3 park & unpart 方式
 
 ```java
 @Slf4j(topic = "c.TestOrderControlTest3")
