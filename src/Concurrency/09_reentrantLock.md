@@ -646,11 +646,11 @@ public class ReentrantLockTest4 {
 
 ## 9.6 同步模式顺序控制
 
-### 9.6.1 固定顺序
+### 9.6.1 固定顺序输出
 
 **要求：先输出`2`再输出`1**`
 
-#### 9.6.1.1 wait-notify 方式
+#### 9.6.1.1 wait & notify 方式
 
 ```java
 @Slf4j(topic = "c.OrderControlTest1")
@@ -748,8 +748,8 @@ public class OrderControlTest2 {
 #### 9.6.1.3 park & unpart 方式
 
 ```java
-@Slf4j(topic = "c.TestOrderControlTest3")
-public class TestOrderControlTest3 {
+@Slf4j(topic = "c.OrderControlTest3")
+public class OrderControlTest3 {
     public static void main(String[] args) {
         Thread t1 = new Thread(() -> {
             LockSupport.park();
@@ -768,7 +768,158 @@ public class TestOrderControlTest3 {
 输出：
 
 ```java
-12:58:35.637 [t2] c.TestOrderControlTest3 - 2
-12:58:35.639 [t1] c.TestOrderControlTest3 - 1
+12:58:35.637 [t2] c.OrderControlTest3 - 2
+12:58:35.639 [t1] c.OrderControlTest3 - 1
+```
+
+### 9.6.2 交替顺序输出
+
+**要求：线程1输出`a`5次，线程2输出`b`5次，线程3输出`c`5次。现在要求输出`abcabcabcabcabc`如何实现？**
+
+#### 9.6.2.1 wait & notify方式
+
+```java
+@Slf4j(topic = "c.OrderControlTest4")
+public class OrderControlTest4 {
+    public static void main(String[] args) {
+        WaitNotify lock = new WaitNotify(1, 5);
+        new Thread(() -> {
+            lock.print("a", 1, 2);
+        }, "t1").start();
+        new Thread(() -> {
+            lock.print("b", 2, 3);
+        }, "t2").start();
+        new Thread(() -> {
+            lock.print("c", 3, 1);
+        }, "t2").start();
+    }
+}
+
+@AllArgsConstructor
+class WaitNotify {
+    private int flag; // 1, 2, 3
+    private int loopTimes;
+
+    public void print(String output, int waitingFlag, int nextFlag) {
+        for (int i = 0; i < loopTimes; i++) {
+            synchronized (this) {
+                while (flag != waitingFlag) {
+                    try {
+                        this.wait();
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+                System.out.print(output);
+                flag = nextFlag;
+                this.notifyAll();
+            }
+        }
+    }
+}
+```
+
+输出：
+
+```java
+abcabcabcabcabc
+```
+
+#### 9.6.2.2 ReentrantLock & Condition 方式
+
+```java
+@Slf4j(topic = "c.OrderControlTest5")
+public class OrderControlTest5 {
+    public static void main(String[] args) throws InterruptedException {
+        AwaitSignal awaitSignal = new AwaitSignal(5);
+        Condition a = awaitSignal.newCondition();
+        Condition b = awaitSignal.newCondition();
+        Condition c = awaitSignal.newCondition();
+        new Thread(() -> {
+            awaitSignal.print("a", a, b);
+        }, "t1").start();
+        new Thread(() -> {
+            awaitSignal.print("b", b, c);
+        }, "t2").start();
+        new Thread(() -> {
+            awaitSignal.print("c", c, a);
+        }, "t3").start();
+        Thread.sleep(1000);
+        awaitSignal.lock();
+        try {
+            a.signal();
+        } finally {
+            awaitSignal.unlock();
+        }
+    }
+}
+
+@AllArgsConstructor
+class AwaitSignal extends ReentrantLock {
+    private int loopTimes;
+
+    public void print(String output, Condition current, Condition next) {
+        for (int i = 0; i < loopTimes; i++) {
+            lock();
+            try {
+                current.await();
+                System.out.print(output);
+                next.signal();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            } finally {
+                unlock();
+            }
+        }
+    }
+}
+```
+
+输出：
+
+```java
+abcabcabcabcabc
+```
+
+#### 9.6.2.3 park & unpark 方式
+
+```java
+@Slf4j(topic = "c.OrderControlTest6")
+public class OrderControlTest6 {
+    static Thread t1;
+    static Thread t2;
+    static Thread t3;
+
+    public static void main(String[] args) {
+        ParkUnpark parkUnpark = new ParkUnpark(5);
+        t1 = new Thread(() -> parkUnpark.print("a", t2), "t1");
+        t2 = new Thread(() -> parkUnpark.print("b", t3), "t2");
+        t3 = new Thread(() -> parkUnpark.print("c", t1), "t3");
+        t1.start();
+        t2.start();
+        t3.start();
+        
+        LockSupport.unpark(t1);
+    }
+}
+
+@AllArgsConstructor
+class ParkUnpark {
+    private int loopTimes;
+
+    public void print(String output, Thread next) {
+        for (int i = 0; i < loopTimes; i++) {
+            LockSupport.park();
+            System.out.print(output);
+            LockSupport.unpark(next);
+        }
+    }
+}
+```
+
+输出：
+
+```java
+abcabcabcabcabc
 ```
 
