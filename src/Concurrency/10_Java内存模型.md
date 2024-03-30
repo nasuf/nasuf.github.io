@@ -762,4 +762,197 @@ happens-before 规定了对共享变量的写操作对其他线程的读操作�
   }, "t2").start();
   ```
 
+  ## 10.7 线程安全单例模式
   
+  单例模式有很多实现方法，饿汉、懒汉、静态内部类、枚举类，试分析每种实现下获取单例对象（即调用`getInstance`）时的线程安全性，并思考注释中的问题
+  
+  - 饿汉式：类加载就会导致该单例对象被创建
+  - 懒汉式：类加载不会导致该单例对象被创建，而是首次使用该对象时候被创建
+
+> 实现一
+
+```java
+// 问题1：为什么加final -> 防止子类创建，子类中的方法覆盖会破坏单例
+// 问题2：如果实现了序列化接口，还要做什么来防止反序列化破坏单例 -> 创建如下readResolve方法，直接返回单例对象
+public final class Singleton implements Serializable {
+  // 问题3：为什么设置私有？是否能防止反射创建新的实例 -> 私有是防止随意创建对象。但是不能防止反射创建实例
+  private Singleton() {}
+  // 问题4：这样初始化是否能保证单例对象创建时的线程安全 -> 能保证。因为静态变量的初始化是在类加载阶段完成的，jvm会保证线程安全性
+  private static final Singleton INSTANCE = new Singleton();
+  // 问题5：为什么提供静态方法而不是直接将INSTANCE设置为public -> 1) 封装性。该方法可提供懒惰初始化 2) 可以有泛型的支持
+  public static Singleton getInstance() {
+    return INSTANCE;
+  }
+  
+  public Object readResolve() {
+    return INSTANCE;
+  }
+}
+```
+
+> 实现二
+
+```java
+// 问题1：枚举单例是如何限制实例个数的 -> INSTANCE 本质上是Singleton class的一个静态变量。相关字节码见下面一段
+// 问题2：枚举单例在创建时是否存在并发问题 -> 不会。因为是静态变量，所以类加载时期的初始化操作由jvm来保证线程安全性
+// 问题3：枚举单例是否能被反射破坏单例 -> 不能
+// 问题4：枚举单例是否能被反序列化破坏单例 -> 能。所有的枚举类都继承自Enum类，该类默认已经实现了Serializable接口。但是Enum类在实现时已经考虑了反序列化的问题，保证了反序列化时不会破坏单例
+// 问题5：枚举单例属于饿汉式还是懒汉式 -> 饿汉式
+// 问题6：枚举单例如果希望加入一些单例创建时的初始化逻辑，该如何做 -> 可以给枚举类加构造方法和成员方法
+enum Singleton {
+  INSTANCE;
+}
+```
+
+该枚举类字节码如下：
+
+```java
+// class version 52.0 (52)
+// access flags 0x4031
+// signature Ljava/lang/Enum<Lcom/nasuf/concurrency/Singleton;>;
+// declaration: com/nasuf/concurrency/Singleton extends java.lang.Enum<com.nasuf.concurrency.Singleton>
+public final enum com/nasuf/concurrency/Singleton extends java/lang/Enum {
+
+  // compiled from: Singleton.java
+
+  // access flags 0x4019
+  public final static enum Lcom/nasuf/concurrency/Singleton; INSTANCE
+
+  // access flags 0x101A
+  private final static synthetic [Lcom/nasuf/concurrency/Singleton; $VALUES
+
+  // access flags 0x9
+  public static values()[Lcom/nasuf/concurrency/Singleton;
+   L0
+    LINENUMBER 3 L0
+    GETSTATIC com/nasuf/concurrency/Singleton.$VALUES : [Lcom/nasuf/concurrency/Singleton;
+    INVOKEVIRTUAL [Lcom/nasuf/concurrency/Singleton;.clone ()Ljava/lang/Object;
+    CHECKCAST [Lcom/nasuf/concurrency/Singleton;
+    ARETURN
+    MAXSTACK = 1
+    MAXLOCALS = 0
+
+  // access flags 0x9
+  public static valueOf(Ljava/lang/String;)Lcom/nasuf/concurrency/Singleton;
+   L0
+    LINENUMBER 3 L0
+    LDC Lcom/nasuf/concurrency/Singleton;.class
+    ALOAD 0
+    INVOKESTATIC java/lang/Enum.valueOf (Ljava/lang/Class;Ljava/lang/String;)Ljava/lang/Enum;
+    CHECKCAST com/nasuf/concurrency/Singleton
+    ARETURN
+   L1
+    LOCALVARIABLE name Ljava/lang/String; L0 L1 0
+    MAXSTACK = 2
+    MAXLOCALS = 1
+
+  // access flags 0x2
+  // signature ()V
+  // declaration: void <init>()
+  private <init>(Ljava/lang/String;I)V
+   L0
+    LINENUMBER 3 L0
+    ALOAD 0
+    ALOAD 1
+    ILOAD 2
+    INVOKESPECIAL java/lang/Enum.<init> (Ljava/lang/String;I)V
+    RETURN
+   L1
+    LOCALVARIABLE this Lcom/nasuf/concurrency/Singleton; L0 L1 0
+    MAXSTACK = 3
+    MAXLOCALS = 3
+
+  // access flags 0x8
+  static <clinit>()V
+   L0
+    LINENUMBER 4 L0
+    NEW com/nasuf/concurrency/Singleton
+    DUP
+    LDC "INSTANCE"
+    ICONST_0
+    INVOKESPECIAL com/nasuf/concurrency/Singleton.<init> (Ljava/lang/String;I)V
+    PUTSTATIC com/nasuf/concurrency/Singleton.INSTANCE : Lcom/nasuf/concurrency/Singleton;
+   L1
+    LINENUMBER 3 L1
+    ICONST_1
+    ANEWARRAY com/nasuf/concurrency/Singleton
+    DUP
+    ICONST_0
+    GETSTATIC com/nasuf/concurrency/Singleton.INSTANCE : Lcom/nasuf/concurrency/Singleton;
+    AASTORE
+    PUTSTATIC com/nasuf/concurrency/Singleton.$VALUES : [Lcom/nasuf/concurrency/Singleton;
+    RETURN
+    MAXSTACK = 4
+    MAXLOCALS = 0
+}
+
+```
+
+枚举类默认继承的Enum class如下，默认已经实现了Serializable接口。
+
+```java
+public abstract class Enum<E extends Enum<E>>
+        implements Comparable<E>, Serializable {...}
+```
+
+> 实现三
+
+```java
+public final class Singleton {
+  private Singleton() {}
+  private static Singleton INSTANCE = null;
+  
+  // static synchronized 保证了线程安全
+  public static synchronized Singleton getInstance() {
+    if (INSTANCE != null) {
+      return INSTANCE;
+    }
+    INSTANCE = new Singleton();
+    return INSTANCE;
+  }
+}
+```
+
+> 实现四
+
+```java
+public final class Singleton {
+  private Singleton() {}
+  
+  // 问题1：解释为什么要加volatile -> 保证指令不会重排序。详细解释见章节10.5.3
+  private static volatile Sigleton INSTANCE = null;
+  
+  // 问题2：对比实现3，说出这样做的意义 -> 缩小了同步范围
+  public static Singleton getInstance() {
+    if (INSTANCE != null) {
+      return INSTANCE;
+    }
+    synchronized(Singleton.class) {
+      // 问题3：为什么还要在这里加空判断 -> 防止并发问题
+      if (INSTANCE != null) {
+        return INSTANCE;
+      }
+      INSTANCE = new Singleton();
+      return INSTANCE;
+    }
+  }
+}
+```
+
+> 实现五
+
+```java
+public final class Singleton {
+  private Singleton() {}
+  // 问题1：属于懒汉式还是饿汉式 -> 懒汉式。类加载本身是懒惰的，只有在首次使用时才会加载。因此内部的静态变量也不会进行初始化操作
+  private static class LazyHolder {
+    static final Singleton INSTANCE = new Singleton();
+  }
+  
+  // 问题2：在创建时是否有并发问题 -> 类加载时，静态变量的赋值操作由JVM来保证线程安全性
+  public static Sigleton getInstance() {
+    return LazyHolder.INSTANCE;
+  }
+}
+```
+
