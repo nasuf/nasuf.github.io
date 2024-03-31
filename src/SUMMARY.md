@@ -43,6 +43,7 @@
   - [8. 线程活跃性](./Concurrency/08_线程活跃性.md)
   - [9. ReentrantLock](./Concurrency/09_reentrantLock.md)
   - [10. Java内存模型](./Concurrency/10_Java内存模型.md)
+  - [11. 无锁（乐观锁-非阻塞）](./Concurrency/11_无锁并发.md)
 - [Reading List (480)](./ReadingList/README.md)
   - [Before 2017 (166)](./ReadingList/Before_2017.md)
   - [2017 (122)](./ReadingList/2017.md)
