@@ -45,6 +45,7 @@
   - [10. Java内存模型](./Concurrency/10_Java内存模型.md)
   - [11. 无锁](./Concurrency/11_无锁并发.md)
   - [12. 共享模型之不可变](./Concurrency/12_共享模型之不可变.md)
+  - [13. 并发工具 - 线程池](./Concurrency/13_并发工具_线程池.md)
 - [Reading List (481)](./ReadingList/README.md)
   - [Before 2017 (166)](./ReadingList/Before_2017.md)
   - [2017 (122)](./ReadingList/2017.md)
